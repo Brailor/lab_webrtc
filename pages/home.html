@@ -1,0 +1,68 @@
+{{ template "base" .}} {{ define "title"}} {{ .Title }} {{ end }} {{ define "content" }}
+<h1>{{ .Title }}</h1>
+<sl-divider style="--width: 4px"></sl-divider>
+<h4>Available videos on server:</h4>
+<div>
+  {{ range .Videos }}
+  <div>
+    <a href="video/{{ .Name }}">
+      <sl-card class="card-basic"> {{ .Name }} </sl-card>
+    </a>
+  </div>
+  {{ end }}
+
+  <button id="stream">stream video</button>
+
+  <div id="remoteVideos"></div>
+</div>
+<script lang="typescript">
+  const log = (msg) => {
+    console.log(msg);
+  };
+
+  let doSignaling = (method) => {
+      peerConnection.createOffer()
+        .then((offer) => {
+          peerConnection.setLocalDescription(offer);
+
+          return fetch(`/${method}`, {
+            method: 'post',
+            headers: {
+              Accept: 'application/json, text/plain, */*',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(offer),
+          });
+        })
+        .then((res) => res.json())
+        .then((res) => peerConnection.setRemoteDescription(res))
+        .catch(log);
+    };
+
+  let peerConnection = new RTCPeerConnection({
+    iceServers: [{
+      urls:"stun:stun.services.mozilla.com"
+    }]
+  });
+  peerConnection.addTransceiver('audio');
+  peerConnection.addTransceiver('video')
+
+  doSignaling("signal")
+
+  window.peerConnection = peerConnection;
+    peerConnection.ontrack = async (event) => {
+     console.log("ontrack", event)
+      const el = document.createElement(event.track.kind);
+      el.srcObject = event.streams[0];
+      el.controls = true;
+      document.getElementById('remoteVideos').appendChild(el);
+    };
+
+
+
+  const buttonEl = document.getElementById('stream');
+  buttonEl.addEventListener("click", async () => {
+    doSignaling("video/1")
+  })
+</script>
+{{ end }}

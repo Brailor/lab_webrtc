@@ -35,15 +35,11 @@
           });
         })
         .then((res) => res.json())
-        .then((res) => peerConnection.setRemoteDescription(res))
+        .then((res) => res && peerConnection.setRemoteDescription(res))
         .catch(log);
     };
 
-  let peerConnection = new RTCPeerConnection({
-    iceServers: [{
-      urls:"stun:stun.services.mozilla.com"
-    }]
-  });
+  let peerConnection = new RTCPeerConnection();
   peerConnection.addTransceiver('audio');
   peerConnection.addTransceiver('video')
 
